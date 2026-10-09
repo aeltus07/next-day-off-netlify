@@ -208,8 +208,7 @@
 </div>
 
 <script>
-const ICS_URL = "/hcpss.ics";
-const PROXY = "";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywO4dSnBWkAa_KHhoR646GTMoCXMjxksF3DZBmRL1Ig0nJEJcS6X9HGqQHf1t53hVu/exec";
 
 // Last scheduled day of school (tentative). Local midnight, month is 0-indexed.
 const LAST_DAY = new Date(2027, 5, 8); // June 8, 2027
@@ -527,12 +526,13 @@ tickTimer = setInterval(tickCountdown, 1000);
 
 async function load() {
   try {
-    const url = PROXY ? PROXY + encodeURIComponent(ICS_URL) : ICS_URL;
-    const res = await fetch(url);
+    const res = await fetch(APPS_SCRIPT_URL, { redirect: "follow" });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    EVENTS = parseICS(await res.text());
+    const text = await res.text();
+    if (text.startsWith("ERROR:")) throw new Error(text);
+    EVENTS = parseICS(text);
     render();
-    lastLoad = Date.now(); 
+    lastLoad = Date.now();
     renderUpdated();
   } catch (err) {
     console.error("Live fetch failed:", err);
