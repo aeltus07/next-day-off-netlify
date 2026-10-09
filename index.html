@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HCPSS Days Off</title>
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+
+<style>
+  :root{
+    --bg:#f5f6fb; --card:#ffffff; --ink:#191b2b; --muted:#6b7280;
+    --line:#e7e9f2; --accent:#6366f1; --accent2:#8b5cf6; --early:#f59e0b;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink);
+    min-height:100vh; padding:2.5rem 1rem 4rem;
+    display:flex; justify-content:center;
+  }
+  .wrap{width:100%; max-width:40rem;}
+  header h1{
+    font-size:1rem; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--muted);
+    text-align:center; margin-bottom:.35rem;
+  }
+  .today{
+    text-align:center; font-size:.9rem; color:var(--muted);
+    margin-bottom:1.25rem;
+  }
+  .today strong{color:var(--ink);}
+
+  /* ---- HERO ---- */
+  .hero{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; border-radius:var(--radius);
+    padding:2.5rem 1.5rem; text-align:center;
+    box-shadow:0 18px 40px -18px rgba(99,102,241,.7);
+    margin-bottom:1rem;
+  }
+  .hero .label{
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.12em;
+    opacity:.85; margin-bottom:.5rem;
+  }
+  .hero .bigline{
+    display:flex; align-items:baseline; justify-content:center;
+    gap:.85rem; white-space:nowrap;
+  }
+  .hero .number,
+  .hero .unit{
+    font-size:clamp(2.75rem,17vw,7rem);
+    font-weight:800; line-height:.9; letter-spacing:-.03em;
+  }
+  .hero .bigline.celebrate .unit{
+    font-size:1.1rem; font-weight:600; letter-spacing:0; opacity:.95;
+  }
+
+  .hero .countdown{
+    margin-top:1.25rem;
+    font-size:1.05rem; font-weight:600;
+    font-variant-numeric:tabular-nums; letter-spacing:.08em;
+    opacity:.85; min-height:1.2em;
+  }
+
+  .hero .event{margin-top:1rem; font-size:.95rem; opacity:.9;}
+  .hero .event strong{display:block; font-size:1.15rem; margin-top:.15rem; opacity:1;}
+
+  /* ---- LAST DAY STAT ---- */
+  .stat{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:1rem; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:.9rem 1.1rem; margin-bottom:1.25rem;
+  }
+  .stat .txt{font-size:.85rem; color:var(--muted); line-height:1.4;}
+  .stat .txt strong{color:var(--ink); display:block; font-size:.95rem;}
+  .stat .big{font-size:1.6rem; font-weight:800; color:var(--accent); white-space:nowrap;}
+  .stat .big small{font-size:.75rem; font-weight:600; color:var(--muted);}
+
+  /* ---- TOGGLE ---- */
+  .controls{
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:.85rem 1.1rem; margin-bottom:1.75rem;
+  }
+  .controls span{font-size:.95rem; font-weight:500;}
+  .switch{position:relative; width:46px; height:26px; flex:none;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{
+    position:absolute; inset:0; background:#cbd2e0;
+    border-radius:999px; transition:background .2s; cursor:pointer;
+  }
+  .slider::before{
+    content:""; position:absolute; width:20px; height:20px;
+    left:3px; top:3px; background:#fff; border-radius:50%;
+    transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  .switch input:checked + .slider{background:var(--accent);}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
+
+  /* ---- LIST ---- */
+  h2{
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--muted); margin:0 0 .75rem .25rem;
+  }
+  ul{list-style:none; display:flex; flex-direction:column; gap:.6rem;}
+  li{
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    background:var(--card); border:1px solid var(--line);
+    border-left:4px solid var(--accent); border-radius:12px; padding:.9rem 1.1rem;
+    transition:transform .15s, border-color .15s;
+  }
+  li:hover{transform:translateX(3px); border-left-color:var(--accent2);}
+  li.early{border-left-color:var(--early);}
+  .li-date{font-weight:700; font-size:1.02rem;}
+  .li-why{font-size:.8rem; color:var(--muted); margin-top:.15rem;}
+  .li-away{
+    font-size:.82rem; font-weight:700; color:var(--accent);
+    white-space:nowrap; text-align:right;
+  }
+  li.early .li-away{color:var(--early);}
+  li.empty{
+    display:block; text-align:center; color:var(--muted);
+    border-left-color:var(--line); padding:2rem;
+  }
+  .li-right{
+    display:flex; flex-direction:column; align-items:flex-end;
+    gap:.35rem; flex:none;
+  }
+  .li-gcal{
+    font-size:.72rem; font-weight:700; color:var(--accent);
+    text-decoration:none; white-space:nowrap;
+    border:1px solid var(--line); border-radius:999px;
+    padding:.2rem .55rem;
+    transition:background .15s, border-color .15s;
+  }
+  .li-gcal:hover{background:var(--bg); border-color:var(--accent);}
+  
+  .footnote{
+    margin-top:2rem; font-size:.75rem; color:var(--muted);
+    text-align:center; line-height:1.6;
+  }
+  .updated{
+    margin-top:.6rem; font-size:.72rem; color:var(--muted);
+    text-align:center; opacity:.85;
+  }
+
+    /* ---- DARK MODE (automatic, follows the visitor's OS setting) ---- */
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme:dark;
+      --bg:#0f1117; --card:#1a1d29; --ink:#e8eaf3; --muted:#9aa2b5;
+      --line:#2a2e3d; --accent:#818cf8; --accent2:#a78bfa; --early:#fbbf24;
+    }
+    /* the toggle track + knob use hardcoded colors, so re-tint them here */
+    .slider{background:#3a3f52;}
+    .slider::before{background:#e8eaf3;}
+    /* soften the hero glow so it doesn't blow out on a dark page */
+    .hero{box-shadow:0 18px 40px -18px rgba(129,140,248,.55);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>HCPSS Days Off</h1>
+    <p class="today" id="todayLine"></p>
+  </header>
+
+  <!-- 1. BIG COUNTDOWN -->
+  <section class="hero" id="hero">
+    <div class="label" id="heroLabel">Next day off in</div>
+    <div class="bigline" id="heroBig">
+      <span class="number" id="heroNumber">–</span>
+      <span class="unit" id="heroUnit">days</span>
+    </div>
+    <div class="countdown" id="heroCountdown"></div>
+    <div class="event" id="heroEvent"></div>
+  </section>
+
+  <!-- 2. LAST DAY OF SCHOOL -->
+  <div class="stat" id="lastDayCard">
+    <div class="txt">
+      Until the last day of school
+      <strong>Jun 8, 2027 · tentative</strong>
+    </div>
+    <div class="big"><span id="lastDayNum">–</span> <small id="lastDayUnit">days</small></div>
+  </div>
+
+  <!-- 3. EARLY-DISMISSAL TOGGLE — default OFF -->
+  <label class="controls">
+    <span>Include early dismissals</span>
+    <span class="switch">
+      <input type="checkbox" id="earlyToggle">
+      <span class="slider"></span>
+    </span>
+  </label>
+
+  <h2>Upcoming days off</h2>
+  <ul id="list"><li class="empty">Loading…</li></ul>
+
+  <p class="footnote">
+    Last day of school is <strong>tentative</strong> and can shift if inclement weather days are used.
+  </p>
+  <p class="updated" id="updated"></p>
+</div>
+
+<script>
+const ICS_URL = "/hcpss.ics";
+const PROXY = "";
+
+// Last scheduled day of school (tentative). Local midnight, month is 0-indexed.
+const LAST_DAY = new Date(2027, 5, 8); // June 8, 2027
+
+const SAMPLE_ICS = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261126
+DTEND;VALUE=DATE:20261127
+SUMMARY:Thanksgiving Break - No School
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20270102
+SUMMARY:Winter Break
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20260930
+DTEND;VALUE=DATE:20261001
+SUMMARY:Schools close 3 hours early; No half-day Pre-K/RECC
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261209
+DTEND;VALUE=DATE:20261210
+SUMMARY:Schools Closed 3 Hours Early - Staff Professional Day
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261015T190000Z
+SUMMARY:PTA Meeting
+END:VEVENT
+END:VCALENDAR`;
+
+// ---------- parsing (unchanged) ----------
+function parseICS(text) {
+  const unfolded = text.replace(/\r?\n[ \t]/g, "");   // RFC 5545 line folding
+  const events = [];
+  let cur = null;
+  for (const line of unfolded.split(/\r?\n/)) {
+    if (line === "BEGIN:VEVENT") { cur = {}; continue; }
+    if (line === "END:VEVENT")   { if (cur) events.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    const i = line.indexOf(":");
+    if (i === -1) continue;
+    const rawKey = line.slice(0, i), value = line.slice(i + 1);
+    const key = rawKey.split(";")[0].toUpperCase();
+    const params = rawKey.slice(key.length);
+    if (key === "DTSTART") {
+      cur.start = value;
+      cur.allDay = /VALUE=DATE(?!-TIME)/i.test(params) || /^\d{8}$/.test(value);
+    } else if (key === "DTEND") {
+      cur.end = value;
+    } else if (key === "SUMMARY") {
+      cur.summary = value
+        .replace(/\\,/g, ",")
+        .replace(/\\;/g, ";")
+        .replace(/\\n/gi, " ");
+    }
+  }
+  return events;
+}
+
+
+
+function icsDate(v) {
+  return new Date(+v.slice(0,4), +v.slice(4,6) - 1, +v.slice(6,8));
+}
+
+// ---------- date helpers ----------
+function todayLocal() {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+// whole days between two local-midnight dates (round absorbs DST wobble)
+function daysBetween(a, b) {
+  return Math.round((b - a) / 864e5);
+}
+const fmt = d => d.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" });
+const fmtLong = d => d.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+// Google Calendar wants dates as YYYYMMDD (no dashes, no time for all-day)
+function toGCalStamp(d) {
+  const p = n => String(n).padStart(2, "0");
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+}
+
+// Build a "pre-filled new event" link. End is exclusive in BOTH ICS and
+// Google Calendar, so we can pass e.end directly.
+function gcalLink(e) {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: e.summary,
+    dates: toGCalStamp(e.start) + "/" + toGCalStamp(e.end),
+  });
+  return "https://calendar.google.com/calendar/render?" + params.toString();
+}
+
+// ---------- filters ----------
+const OFF_RE = /no school|\bclosed\b|holiday|break|vacation|in-?service|professional (learning|development|workday)|pupil free|day off/i;
+const EARLY_RE = /3\s*hours?\s*early|early\s*dismissal|early\s*release|close[sd]?\s*3\s*hours/i;
+
+//ELEMENTARY-SPECIFIC
+const LOWER_LEVEL_RE = /^\s*(elementary|middle)\b/i;
+function isRelevant(summary) {
+  return !LOWER_LEVEL_RE.test(summary || "");
+}
+
+// A true day off = matches OFF_RE and is NOT an early-dismissal event.
+// This stops "Schools Closed 3 Hours Early" from counting as a full day off.
+function isFullDayOff(summary) {
+  const s = summary || "";
+  return OFF_RE.test(s) && !EARLY_RE.test(s);
+}
+function isEarly(summary) {
+  return EARLY_RE.test(summary || "");
+}
+
+function toEvent(e) {
+  const start = icsDate(e.start);
+  const end = e.end ? icsDate(e.end)
+                    : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+  return { summary: e.summary || "", start, end };
+}
+
+// Returns { off, all }. `off` = full days off (always). `all` adds early
+// dismissals when includeEarly is true.
+function collect(events, includeEarly) {
+  const byDate = (a, b) => a.start - b.start;
+
+  const relevant = events.filter(e => e.allDay && isRelevant(e.summary));
+
+  const off = relevant
+    .filter(e => isFullDayOff(e.summary))
+    .map(toEvent)
+    .sort(byDate);
+
+  const early = includeEarly
+    ? relevant.filter(e => isEarly(e.summary) && !isFullDayOff(e.summary))
+             .map(toEvent).sort(byDate)
+    : [];
+
+  const all = off.concat(early).sort(byDate);
+  return { off, all };
+}
+
+// ---------- state ----------
+let EVENTS = [];
+let tickTimer = null;
+
+// --- auto-refresh ---
+let lastLoad = 0;
+
+// ---------- rendering ----------
+function render() {
+  const includeEarly = document.getElementById("earlyToggle").checked;
+  const today = todayLocal();
+  const { off, all } = collect(EVENTS, includeEarly);
+
+  document.getElementById("todayLine").innerHTML = "Today is <strong>" + fmtLong(today) + "</strong>";
+
+  renderHero(off, today);
+  renderLastDay(today);
+  renderList(all, today);
+}
+
+// stores the current countdown target (midnight of the next day off)
+let countdownTarget = null;
+
+function renderHero(off, today) {
+  const big    = document.getElementById("heroBig");
+  const label  = document.getElementById("heroLabel");
+  const number = document.getElementById("heroNumber");
+  const unit   = document.getElementById("heroUnit");
+  const cd     = document.getElementById("heroCountdown");
+  const evEl   = document.getElementById("heroEvent");
+
+  big.classList.remove("celebrate");
+
+  const current = off.find(e => e.start <= today && e.end > today);
+  const next    = off.find(e => e.start > today);
+
+  if (current) {
+    big.classList.add("celebrate");
+    label.textContent  = "Today";
+    number.textContent = "🎉";
+    unit.textContent   = "Enjoy your day off!";
+    cd.textContent     = "";
+    evEl.innerHTML     = "<strong>" + current.summary + "</strong>";
+    countdownTarget = null;
+    return;
+  }
+
+  if (!next) {
+    label.textContent  = "Next day off";
+    number.textContent = "–";
+    unit.textContent   = "";
+    cd.textContent     = "";
+    evEl.textContent   = "No upcoming days off found.";
+    countdownTarget = null;
+    return;
+  }
+
+  const n = daysBetween(today, next.start);
+  label.textContent  = "Next day off in";
+  number.textContent = n;
+  unit.textContent   = n === 1 ? "day" : "days";
+  evEl.innerHTML     = "<strong>" + fmt(next.start) + "</strong>" + next.summary;
+  countdownTarget    = next.start;
+  tickCountdown();
+}
+
+// live HH:MM:SS to midnight of the next day off
+function tickCountdown() {
+  const cd = document.getElementById("heroCountdown");
+  if (!countdownTarget) { cd.textContent = ""; return; }
+
+  // whole days remaining, then the leftover within the final 24h
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // milliseconds from now until midnight tonight (never exceeds 24h)
+  const midnight = new Date(startOfToday);
+  midnight.setDate(midnight.getDate() + 1);
+  let rem = midnight - now;
+  if (rem < 0) rem = 0;
+
+  const totalSec = Math.floor(rem / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = v => String(v).padStart(2, "0");
+
+  cd.textContent = "and " +pad(h) + ":" + pad(m) + ":" + pad(s);
+}
+
+function renderLastDay(today) {
+  // always shown — even if it lands on a half day
+  const n = Math.max(0, daysBetween(today, LAST_DAY));
+  document.getElementById("lastDayNum").textContent = n;
+  document.getElementById("lastDayUnit").textContent = n === 1 ? "day" : "days";
+}
+
+function renderUpdated() {
+  const el = document.getElementById("updated");
+  if (!el) return;
+  if (!lastLoad) { el.textContent = ""; return; }
+  const t = new Date(lastLoad);
+  el.textContent = "Last updated " +
+    t.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function renderList(all, today) {
+  const ul = document.getElementById("list");
+  ul.innerHTML = "";
+  const upcoming = all.filter(e => e.end > today);
+
+  if (!upcoming.length) {
+    ul.innerHTML = '<li class="empty">No upcoming days off found.</li>';
+    return;
+  }
+
+  for (const e of upcoming) {
+    const inProgress = e.start <= today && e.end > today;
+    const n = daysBetween(today, e.start);
+    const last = new Date(e.end);
+    last.setDate(last.getDate() - 1);          // DTEND is exclusive
+    const range = last > e.start ? fmt(e.start) + " – " + fmt(last) : fmt(e.start);
+    const away = inProgress ? "In progress"
+               : n === 0 ? "Today"
+               : n === 1 ? "Tomorrow"
+               : n + " days";
+
+    const li = document.createElement("li");
+    if (isEarly(e.summary) && !isFullDayOff(e.summary)) li.classList.add("early");
+
+    // left column: date + reason
+    const info = document.createElement("div");
+    const dateEl = document.createElement("div");
+    dateEl.className = "li-date";
+    dateEl.textContent = range;
+    const whyEl = document.createElement("div");
+    whyEl.className = "li-why";
+    whyEl.textContent = e.summary;
+    info.appendChild(dateEl);
+    info.appendChild(whyEl);
+
+    // right column: days-away + add-to-calendar, stacked
+    const right = document.createElement("div");
+    right.className = "li-right";
+    const awayEl = document.createElement("div");
+    awayEl.className = "li-away";
+    awayEl.textContent = away;
+    const a = document.createElement("a");
+    a.className = "li-gcal";
+    a.href = gcalLink(e);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = "＋ Google Cal";
+    a.title = 'Add "' + e.summary + '" to Google Calendar';
+    right.appendChild(awayEl);
+    right.appendChild(a);
+
+    li.appendChild(info);
+    li.appendChild(right);
+    ul.appendChild(li);
+  }
+}
+
+// ---------- wiring ----------
+document.getElementById("earlyToggle").addEventListener("change", render);
+
+// tick the countdown once a second
+tickTimer = setInterval(tickCountdown, 1000);
+
+
+
+async function load() {
+  try {
+    const url = PROXY ? PROXY + encodeURIComponent(ICS_URL) : ICS_URL;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    EVENTS = parseICS(await res.text());
+    render();
+    lastLoad = Date.now(); 
+    renderUpdated();
+  } catch (err) {
+    console.error("Live fetch failed:", err);
+    countdownTarget = null;
+    document.getElementById("list").innerHTML =
+      '<li class="empty">Couldn\'t load the calendar right now. Try again in a bit.</li>';
+    document.getElementById("heroLabel").textContent  = "Calendar unavailable";
+    document.getElementById("heroNumber").textContent = "!";
+    document.getElementById("heroUnit").textContent   = "";
+    document.getElementById("heroCountdown").textContent = "";
+    document.getElementById("heroEvent").textContent  = "";
+    document.getElementById("todayLine").innerHTML =
+      "Today is <strong>" + fmtLong(todayLocal()) + "</strong>";
+  }
+}
+load();
+
+// Re-pull when the visitor returns to the tab (schools update the feed mid-year).
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastLoad > 60000) load();
+});
+
+// Optional safety net for tabs left open all day.
+setInterval(() => { if (!document.hidden) load(); }, 30 * 60 * 1000);
+
+// ---------- self-tests (open the console) ----------
+(function test() {
+  if (location.hostname !== "localhost") return;
+  const ev = parseICS(SAMPLE_ICS);
+  console.assert(ev.length === 5, "parses 5 events");
+  console.assert(ev[0].allDay === true, "date-only DTSTART is all-day");
+  console.assert(ev[4].allDay === false, "timed DTSTART is not all-day");
+
+  // the bug fix: "Schools Closed 3 Hours Early" must NOT count as a full day off
+  console.assert(isFullDayOff("Schools Closed 3 Hours Early - Staff Professional Day") === false,
+    "early dismissal is not a full day off");
+  console.assert(isFullDayOff("Winter Break") === true, "break is a full day off");
+
+  const { off } = collect(ev, false);
+  console.assert(off.length === 2, "two full days off (early dismissals excluded)");
+  console.assert(off[0].summary.startsWith("Thanksgiving"), "sorted by date");
+  console.assert(daysBetween(off[1].start, off[1].end) === 12, "12-day winter break");
+
+  const { all } = collect(ev, true);
+  console.assert(all.length === 4, "toggle adds the two early dismissals");
+
+  console.assert(daysBetween(new Date(2026,9,8), new Date(2026,9,16)) === 8, "day math");
+
+  console.assert(isRelevant("Elementary Schools Closed") === false, "elementary filtered out");
+  console.assert(isRelevant("Middle School Early Dismissal") === false, "middle filtered out");
+  console.assert(isRelevant("All Schools Closed") === true, "generic event kept");
+
+  console.log("tests done");
+
+
+})();
+</script>
+</body>
+</html>
